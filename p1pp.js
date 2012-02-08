@@ -4817,15 +4817,19 @@ Strophe.WebSocket.prototype = {
         
         // parse jid for domain and resource
         this.domain = Strophe.getDomainFromJid(this.jid);   
-        if(window.WebSocket){
+        if(window.WebSocket || window.MozWebSocket){
           try{
-            this.ws = new WebSocket(this.service);
+            if (window.MozWebSocket)
+              this.ws = new MozWebSocket(this.service);
+            else
+              this.ws = new WebSocket(this.service);
             this.ws.onopen = this._send_initial_stream.bind(this);
             this._addSysTimedHandler(this._keep_alive_timer, this._keep_alive_handler.bind(this));
             this.ws.onmessage = this._get_stream_id.bind(this)
                                       .prependArg(this._connect_cb.bind(this));
             this.ws.onerror = function(e){ Strophe.error("error : " + e)};                          
             this.ws.onclose = this._ws_on_close.bind(this);
+            this.ws.onerror = this._ws_on_error.bind(this);
           } catch(e){
             //console.log("exception "+e);
           }
@@ -4848,12 +4852,21 @@ Strophe.WebSocket.prototype = {
         this.connect_callback = callback;
         this.domain = Strophe.getDomainFromJid(this.jid);
         this._addSysTimedHandler(this._keep_alive_timer, this._keep_alive_handler.bind(this));
-        this.ws = new WebSocket(this.service);
+        try {
+            if (window.MozWebSocket)
+                this.ws = new MozWebSocket(this.service);
+            else
+                this.ws = new WebSocket(this.service);
+        } catch (ex) {
+            console.info(ex);
+        }
+
         this.ws.onopen = this._send_initial_stream.bind(this);
         this.ws.onmessage = this._get_stream_id.bind(this)
                                 .prependArg(this._rebind_cb.bind(this)
                                     .prependArg(jid).prependArg(sid));
         this.ws.onclose = this._ws_on_close.bind(this);
+        this.ws.onerror = this._ws_on_error.bind(this);
     },
 
     save: function(success, failure){
@@ -5245,6 +5258,11 @@ Strophe.WebSocket.prototype = {
 
     _ws_on_close: function(ev){
       Strophe.info("websocket closed");
+      this._doDisconnect();
+    },
+
+    _ws_on_error: function(ev){
+      Strophe.info("websocket error");
       this._doDisconnect();
     },
     
@@ -6038,7 +6056,8 @@ Strophe.WebSocket.prototype = {
         clearTimeout(this._idleTimeout);
         this._idleTimeout = setTimeout(this._onIdle.bind(this), 100);
     }
-};/**
+};
+/**
  * P1PP library
  * Author: Eric Cestari <ecestari@process-one.net>
  *
