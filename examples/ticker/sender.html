@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Ticker Sender</title>
+    <style type="text/css">
+      html, body { height: 100%; margin: 0px; padding: 0px }
+    </style>
+    <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.js'></script>
+
+    <script src="../../p1pp.js"></script>
+    <script type="text/javascript">
+      $(function() {
+          $("#connect").click(function() {
+            connect($("#password").val())
+          })
+
+          $("#update").click(function() {
+            var el = Strophe.xmlElement("value");
+            el.appendChild(Strophe.xmlTextNode($("#newContent").val()));
+
+            P1PP.publish("ticker", null, el, function() { });
+
+            $("#newContent").val("");
+          })
+      });
+
+      function on_state_change(state, c){
+        if(state ===  Strophe.Status.CONNECTED || state === Strophe.Status.ATTACHED) {
+          $("#loginPane").hide();
+          $("#inputPane").show();
+        }
+      }
+
+      function connect(password) {
+        P1PP.connect({
+          jid: "ticker@p1pp.net",
+          password: password,
+          debug: false, // Change to true to see messages trafic
+          on_strophe_event: on_state_change
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="loginPane">
+      <div>
+        Password: <input id="password" type="password" value="">
+      </div>
+      <div>
+        <input id="connect" type="button" value="Connect">
+      </div>
+    </div>
+    <div id="inputPane" style="display:none">
+      <input id="newContent" type="input">
+      <input id="update" type="button" value="Update">
+    </div>
+  </body>
+</html>

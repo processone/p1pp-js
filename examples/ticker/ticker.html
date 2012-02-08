@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Ticker Viewer</title>
+    <style type="text/css">
+      @import url(li-scroller.css);
+      html, body { height: 100%; margin: 0px; padding: 0px }
+      span { margin: 4em 8em 0 8em; }
+    </style>
+    <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.js'></script>
+    <script src='jquery.li-scroller.1.0.js'></script>
+    <script src="../../p1pp.js"></script>
+    <script type="text/javascript">
+      $(function() {
+        P1PP.connect({
+          debug: false, 	// Change to true to see messages trafic
+          nodes: ["ticker@p1pp.net/ticker"],
+          publish: on_publish,
+          retract: on_retract,
+          on_strophe_event: on_state_change
+          });
+        $("#ticker").liScroll();
+      });
+
+      function on_state_change(state, c){
+        if(state ===  Strophe.Status.CONNECTED || state === Strophe.Status.ATTACHED) {
+        }
+      }
+
+      function on_publish(id, value, node, timestamp) {
+        $("#ticker").stop();
+        $("#ticker").append("<li id='"+id+"'><span>"+$(value).text()+"</span></li>");
+        $("#ticker").liScrollRestart();
+      }
+
+      function on_retract() {
+      }
+    </script>
+  </head>
+
+  <body>
+    <ul id="ticker">
+    </ul>
+  </body>
+</html>
