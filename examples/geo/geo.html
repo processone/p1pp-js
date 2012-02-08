@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <title>Geo</title>
+  <style type="text/css">
+	  html { height: 100% }
+	  body { height: 100%; margin: 0px; padding: 0px }
+	  #locations { height: 100% }
+		#explanations {border: 1px black solid; padding: 5px;background-color: lightyellow; position: absolute; top: 50px; right: 10px; z-index:99; width: 20em}
+	</style>
+	<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.js'></script>
+	<script src='markerclusterer.js'></script>
+	<script src="http://maps.google.com/maps/api/js?sensor=false" type="text/javascript"></script>
+  <!--[if IE]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <script src="../../p1pp.js"></script>
+  <script>
+    var marker_store = {};
+    $(function(){
+	publish = function(id, elem){
+		if(!marker_store[id]){ // do not display twice.
+			var data = id.split(":");
+			var point = new google.maps.LatLng(data[1], data[2]);
+			var marker = new google.maps.Marker({position: point});
+			map.setCenter(point);
+			markerCluster.addMarker(marker);
+			marker_store[id] = marker;
+		}
+	}
+	retract = function(id){
+		var marker = marker_store[id];
+		if(marker){
+			markerCluster.removeMarker(marker);
+			delete marker_store[id];
+		}
+	}
+	var params = {
+		rebind: true,
+		debug: true, /*Will dump traffic in console */
+		retract: retract,
+		num_old: 10,
+		connect_delay: 10000,
+		publish: publish, /* publish callback */
+		nodes: ["geobot@p1pp.net/locations"]
+	};
+	map = new google.maps.Map(document.getElementById("locations"),{
+	  zoom: 6,
+	  mapTypeId: google.maps.MapTypeId.ROADMAP
+	});
+	markerCluster = new MarkerClusterer(map, []);
+	
+
+	P1PP.connect(params);
+})
+</script>
+
+
+</head>
+<body>
+<div id="locations" style="width: 100%; height: 100%"></div>
+<div id="explanations"> The markers shows connected users to the our XMPP server. It is updated in real time as users come and go from this page.</div>
+</body>
+</html>
