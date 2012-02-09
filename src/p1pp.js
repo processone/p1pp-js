@@ -352,7 +352,7 @@ P1PP.prototype = {
     var retracts = msg.getElementsByTagName("retract");
     var length =retracts.length
     for(var i = 0; i < length; i++){
-      this.params.retract(retracts[i].getAttribute("id"));
+      this.params.retract(retracts[i].getAttribute("id"), retracts[i].parentNode.getAttribute("node"));
     }
     var delay_time = undefined;
     var delay = msg.getElementsByTagName("delay");
