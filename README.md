@@ -137,8 +137,8 @@ Callback is called with "ok" when operation was completed successfully, or strin
 
 It's possible to get access to ``Strophe.Connection`` object used internally
 by P1PP. That object is available as ``P1PP.push_client.connection`` and
-only connection was established, which may be determined by listening
-to event delivered through **on_strophe_event** callback.
+only when connection was established, which may be determined by listening
+to events delivered through **on_strophe_event** callback.
 
 
 ## Third party libraries used
