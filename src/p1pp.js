@@ -310,9 +310,10 @@ P1PP.prototype = {
       id = this.connection.getUniqueId("publish");
     
     this.connection.pubsub.publish(this.connection.jid, this.params.pubsub_domain,
-                                   node, [{id: id, value: [value]}], function(stanza) {
+                                   node, [{id: id, value: [value]}],
+                                   callback ? function(stanza) {
                                       that._done_publish(stanza, callback);
-                                   });
+                                   } : null);
     return id;
   },
 
@@ -330,9 +331,9 @@ P1PP.prototype = {
     var that = this;
 
     this.connection.pubsub.deleteNode(this.connection.jid, this.params.pubsub_domain,
-                                   node, function(stanza) {
+                                   node, callback ? function(stanza) {
                                       that._done_delete(stanza, callback);
-                                   });
+                                   } : null);
   },
 
   _done_delete: function(stanza, callback) {
