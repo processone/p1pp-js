@@ -13,6 +13,7 @@ var P1PP = function(params){
   this.defaults= { 
       flash_location: "WebSocketMain.swf",
       domain: "p1pp.net",
+      pubsub_domain: "pubsub.p1pp.net",
       ws_url: "ws://p1pp.net:5280/xmpp",
       bosh_url: "ws://p1pp.net:5280/http-bind",
       connect_timeout: 15000, //How long should we wait before trying BOSH ?
@@ -32,9 +33,6 @@ var P1PP = function(params){
   };
   var merge = function (o,ob) {var i = 0;for (var z in ob) {if (ob.hasOwnProperty(z)) {o[z] = ob[z];}}return o;}
   this.params = merge(this.defaults, params);
-  if(!this.params.pubsub_domain){
-    this.params.pubsub_domain = "pubsub."+this.params.domain;
-  }
 
   var nodes = this.params.nodes;
   if(nodes.length > 0){
