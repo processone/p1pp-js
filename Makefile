@@ -1,5 +1,7 @@
 all: p1pp.js
 
+minified: p1pp.js.min
+
 JS_FILES=\
 	src/p1pp_defs.js \
 	src/flash-websocket/swfobject.js \
@@ -19,3 +21,5 @@ p1pp.js: $(JS_FILES)
 
 p1pp.js.min: p1pp.js
 	@$(JAVA) -jar $(GOOGLE_CC)  p1pp.js >p1pp.js.min
+
+.PHONY: all minified
