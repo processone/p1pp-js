@@ -105,7 +105,7 @@ P1PP.disconnect = function(){
  * Subscribe to a channel or channels
  * @param channels a string or an array of string each being a node to subscribe to
  */
-P1PP.addChannel = function(channels){
+P1PP.subscribeToNode = function(channels){
   if(this.push_client){
     if(typeof channels === "string"){
       channels = [channels];
@@ -122,7 +122,7 @@ P1PP.addChannel = function(channels){
  * Unsubscribe from a channel or channels
  * @param channels a string or an array of string each being a node to unsubscribe from
  */
-P1PP.removeChannel = function(channels){
+P1PP.unsubscribeFromNode = function(channels){
   if(this.push_client){
     if(typeof channels === "string"){
       channels = [channels];
