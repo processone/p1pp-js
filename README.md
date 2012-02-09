@@ -39,13 +39,11 @@ You can pass those parameters to alter library configuration:
 
 * **domain** - Domain used by xmpp server. Default value is "p1pp.net"
 
-* **rebind** - Should be set to true if fast rebind should be used when reconnecting to server
+* **rebind** - When set to true, reconnecting to server after page reload will try to use fast rebind method
 
 * **flash_location** - Path to place where flash helper script is available, defaults to "WebSocketMain.swf"
 
 * **nodes** - List of nodes to subscribe to
-
-* **num_old** - Maximum number of old items to fetch
 
 * **connect_delay** - Wait this much milliseconds before starting connecting to server. Default value is 0
 
@@ -53,19 +51,21 @@ You can pass those parameters to alter library configuration:
 
 * **connect_timeout** - Time in milliseconds before reconnections
 
-* **debug** - If set to true debug messages will be delivered using console.info interface
+* **debug** - If set to true, debug messages will be delivered using console.info interface
 
-* **publish** - Callback function called when new value was published in any of subscribed node.
-  This function should have signature similar to ``function(id, value, node, timestamp)``, where
-  ``id`` is a string identifying received value, ``value`` received content as DOM element,
-  ``node`` contains name of updated node, ``delay`` is time stamp of date when node was published, may be ``null``.
+* **publish** - Callback function called when a new value is published in any of subscribed node.
+  This function should have a signature similar to ``function(id, value, node, timestamp)``, 
+  * ``id`` - identifier of received value, identical value will be used if that value will be retracted
+  * ``value`` - published value content, DOM element
+  * ``node`` - name of node in which that value was published
+  * ``timestamp`` - string with date when node was published, may be ``null``
 
 * **retract** - Callback called when value was deleted from one of subscribed node, this callback should be
   function with this signature ``function(id, node)``, ``id`` is a string identifying retracted value, and
   ``node`` is a node name where retracted value was stored
 
 * **on_strophe_event** - Callback called when underlying strophe connection state is changed, it's called with one of
-  Strophe.Status.* values as argument.
+  ``Strophe.Status.*`` values as argument.
 
 
 ### P1PP.disconnect()
@@ -131,6 +131,14 @@ Example:
 Takes string with name of node to delete, and optional callback function called when operation finishes.
 Callback is called with "ok" when operation was completed successfully, or string with error code otherwise.
 
+
+### Access to underlying strophe connection
+
+
+It's possible to get access to ``Strophe.Connection`` object used internally
+by P1PP. That object is available as ``P1PP.push_client.connection`` and
+only connection was established, which may be determined by listening
+to event delivered through **on_strophe_event** callback.
 
 
 ## Third party libraries used
