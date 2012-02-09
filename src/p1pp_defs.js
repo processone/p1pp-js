@@ -15,7 +15,7 @@ var P1PP = function(params){
       domain: "p1pp.net",
       pubsub_domain: "pubsub.p1pp.net",
       ws_url: "ws://p1pp.net:5280/xmpp",
-      bosh_url: "ws://p1pp.net:5280/http-bind",
+      bosh_url: "http://p1pp.net:5280/http-bind",
       connect_timeout: 15000, //How long should we wait before trying BOSH ?
       connect_delay: 0,     //Connection will not be done before this number of ms
       connect_retry: 10,     //Connection max attempts
