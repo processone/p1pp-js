@@ -198,12 +198,13 @@ P1PP.prototype = {
               // In case of attach, we need to set up the handlers again.
               if(that.params.num_old > 0){
                 that.connection.pubsub.items(that.connection.jid, that.params.pubsub_domain, nodes[i], that.params.num_old, function(message){
-            			var items = message.getElementsByTagName("item")
+                    var items = message.getElementsByTagName("item");
+
             	    for(var i = 0;  i < items.length; i++){
             	      id = items[i].getAttribute("id");
-            	      that.params.publish(id, items[i].firstChild);
+                      that.params.publish(id, items[i].firstChild, nodes[i]);
             	    }
-            		})
+                 })
               }
             }
           }
@@ -261,12 +262,13 @@ P1PP.prototype = {
         if(this.params.num_old > 0){
           var that = this;
           this.connection.pubsub.items(this.connection.jid, this.params.pubsub_domain, nodes[i], this.params.num_old, function(message){
-      			var items = message.getElementsByTagName("item")
+            var items = message.getElementsByTagName("item");
+
       	    for(var i = 0;  i < items.length; i++){
       	      id = items[i].getAttribute("id");
-      	      that.params.publish(id, items[i].firstChild);
+              that.params.publish(id, items[i].firstChild, nodes[i]);
       	    }
-      		})
+          })
         }
         this.connection.pubsub.subscribe(this.connection.jid, 
                                 this.params.pubsub_domain, 
