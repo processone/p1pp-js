@@ -64,9 +64,9 @@ var P1PP = function(params){
  * <h2>Parameters and their default value</h2>                                                                                   
  * jid: ""  if set, will connect with this JID and password instead anonymous                                                                                                        
  * password: ""   see above                                                                                                                                                          
- * ws_url:  "ws://gitlive.com:5280/xmpp",   websocket URL                                                                                                                            
- * bosh_url: "http://gitlive.com:5280/http-bind",   BOSH URL                                                                                                                         
- * domain: "gitlive.com",	  Domain to logon to                                                                                                                                       
+ * ws_url:  "ws://p1pp.net:5280/xmpp",   websocket URL
+ * bosh_url: "http://p1pp.net:5280/http-bind", BOSH URL
+ * domain: "p1pp.net", Domain to logon to
  * rebind: true,   should use rebind if possible                                                                                                                                     
  * nodes: [],    list of nodes to subscribe to                                                                                                                                       
  * num_old: 0,   maximum number of old items to fetch                                                                                                                                
@@ -74,7 +74,7 @@ var P1PP = function(params){
  * connect_delay: 0   The client will attempt connection after this milliseconds                                                                                                     
  * connect_timeout: 3000   How long should we wait before fallback to BOSH  ,                                                                                                        
  * connect_retry: 10,  How many times should we try connecting                                                                                                                       
- * pubsub_domain: "pubsub.gitlive.com",   pubsub service url. defaults to pubsub.domain                                                                                              
+ * pubsub_domain: "pubsub.p1pp.net",   pubsub service url. defaults to pubsub.domain                                                                                              
  * debug: false, 	  Will dump traffic in console if true..                                                                                                                           
  * publish: function(){},   publish callback                                                                                                                                         
  * retract: function(){}   retract callback                                                                                                                                          
