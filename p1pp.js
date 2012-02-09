@@ -13,6 +13,7 @@ var P1PP = function(params){
   this.defaults= { 
       flash_location: "WebSocketMain.swf",
       domain: "p1pp.net",
+      pubsub_domain: "pubsub.p1pp.net",
       ws_url: "ws://p1pp.net:5280/xmpp",
       bosh_url: "ws://p1pp.net:5280/http-bind",
       connect_timeout: 15000, //How long should we wait before trying BOSH ?
@@ -32,9 +33,6 @@ var P1PP = function(params){
   };
   var merge = function (o,ob) {var i = 0;for (var z in ob) {if (ob.hasOwnProperty(z)) {o[z] = ob[z];}}return o;}
   this.params = merge(this.defaults, params);
-  if(!this.params.pubsub_domain){
-    this.params.pubsub_domain = "pubsub."+this.params.domain;
-  }
 
   var nodes = this.params.nodes;
   if(nodes.length > 0){
@@ -66,9 +64,9 @@ var P1PP = function(params){
  * <h2>Parameters and their default value</h2>                                                                                   
  * jid: ""  if set, will connect with this JID and password instead anonymous                                                                                                        
  * password: ""   see above                                                                                                                                                          
- * ws_url:  "ws://gitlive.com:5280/xmpp",   websocket URL                                                                                                                            
- * bosh_url: "http://gitlive.com:5280/http-bind",   BOSH URL                                                                                                                         
- * domain: "gitlive.com",	  Domain to logon to                                                                                                                                       
+ * ws_url:  "ws://p1pp.net:5280/xmpp",   websocket URL
+ * bosh_url: "http://p1pp.net:5280/http-bind", BOSH URL
+ * domain: "p1pp.net", Domain to logon to
  * rebind: true,   should use rebind if possible                                                                                                                                     
  * nodes: [],    list of nodes to subscribe to                                                                                                                                       
  * num_old: 0,   maximum number of old items to fetch                                                                                                                                
@@ -76,7 +74,7 @@ var P1PP = function(params){
  * connect_delay: 0   The client will attempt connection after this milliseconds                                                                                                     
  * connect_timeout: 3000   How long should we wait before fallback to BOSH  ,                                                                                                        
  * connect_retry: 10,  How many times should we try connecting                                                                                                                       
- * pubsub_domain: "pubsub.gitlive.com",   pubsub service url. defaults to pubsub.domain                                                                                              
+ * pubsub_domain: "pubsub.p1pp.net",   pubsub service url. defaults to pubsub.domain                                                                                              
  * debug: false, 	  Will dump traffic in console if true..                                                                                                                           
  * publish: function(){},   publish callback                                                                                                                                         
  * retract: function(){}   retract callback                                                                                                                                          
@@ -105,7 +103,7 @@ P1PP.disconnect = function(){
  * Subscribe to a channel or channels
  * @param channels a string or an array of string each being a node to subscribe to
  */
-P1PP.addChannel = function(channels){
+P1PP.subscribeToNode = function(channels){
   if(this.push_client){
     if(typeof channels === "string"){
       channels = [channels];
@@ -122,7 +120,7 @@ P1PP.addChannel = function(channels){
  * Unsubscribe from a channel or channels
  * @param channels a string or an array of string each being a node to unsubscribe from
  */
-P1PP.removeChannel = function(channels){
+P1PP.unsubscribeFromNode = function(channels){
   if(this.push_client){
     if(typeof channels === "string"){
       channels = [channels];
@@ -6257,12 +6255,13 @@ P1PP.prototype = {
               // In case of attach, we need to set up the handlers again.
               if(that.params.num_old > 0){
                 that.connection.pubsub.items(that.connection.jid, that.params.pubsub_domain, nodes[i], that.params.num_old, function(message){
-            			var items = message.getElementsByTagName("item")
+                    var items = message.getElementsByTagName("item");
+
             	    for(var i = 0;  i < items.length; i++){
             	      id = items[i].getAttribute("id");
-            	      that.params.publish(id, items[i].firstChild);
+                      that.params.publish(id, items[i].firstChild, nodes[i]);
             	    }
-            		})
+                 })
               }
             }
           }
@@ -6320,12 +6319,13 @@ P1PP.prototype = {
         if(this.params.num_old > 0){
           var that = this;
           this.connection.pubsub.items(this.connection.jid, this.params.pubsub_domain, nodes[i], this.params.num_old, function(message){
-      			var items = message.getElementsByTagName("item")
+            var items = message.getElementsByTagName("item");
+
       	    for(var i = 0;  i < items.length; i++){
       	      id = items[i].getAttribute("id");
-      	      that.params.publish(id, items[i].firstChild);
+              that.params.publish(id, items[i].firstChild, nodes[i]);
       	    }
-      		})
+          })
         }
         this.connection.pubsub.subscribe(this.connection.jid, 
                                 this.params.pubsub_domain, 
@@ -6367,9 +6367,10 @@ P1PP.prototype = {
       id = this.connection.getUniqueId("publish");
     
     this.connection.pubsub.publish(this.connection.jid, this.params.pubsub_domain,
-                                   node, [{id: id, value: [value]}], function(stanza) {
+                                   node, [{id: id, value: [value]}],
+                                   callback ? function(stanza) {
                                       that._done_publish(stanza, callback);
-                                   });
+                                   } : null);
     return id;
   },
 
@@ -6387,9 +6388,9 @@ P1PP.prototype = {
     var that = this;
 
     this.connection.pubsub.deleteNode(this.connection.jid, this.params.pubsub_domain,
-                                   node, function(stanza) {
+                                   node, callback ? function(stanza) {
                                       that._done_delete(stanza, callback);
-                                   });
+                                   } : null);
   },
 
   _done_delete: function(stanza, callback) {
@@ -6409,7 +6410,7 @@ P1PP.prototype = {
     var retracts = msg.getElementsByTagName("retract");
     var length =retracts.length
     for(var i = 0; i < length; i++){
-      this.params.retract(retracts[i].getAttribute("id"));
+      this.params.retract(retracts[i].getAttribute("id"), retracts[i].parentNode.getAttribute("node"));
     }
     var delay_time = undefined;
     var delay = msg.getElementsByTagName("delay");
