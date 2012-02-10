@@ -438,9 +438,9 @@ P1PP.prototype = {
      var key = this._build_key()
      if(window.sessionStorage){
         sessionStorage[key]=value;
-      } else {
+     } else {
         this.cookie(key, value);
-      }
+     }
   },
   /**
    * deletes connection information in sessionStorage if available or cookie
@@ -450,9 +450,9 @@ P1PP.prototype = {
     var key = this._build_key()
      if(window.sessionStorage){
         sessionStorage.removeItem(key)
-      } else {
+     } else {
         this.cookie(key, null);
-      }
+     }
   },
   /**
    * fetchs connection information in sessionStorage if available or cookie
@@ -461,10 +461,10 @@ P1PP.prototype = {
   rebind_fetch: function(){
    var key = this._build_key();
    if(window.sessionStorage){
-       return sessionStorage[key];
-     } else {
-       return this.cookie(key);
-     }
+     return sessionStorage[key];
+   } else {
+     return this.cookie(key);
+   }
   },
   /**
    * Build key for protocol.
