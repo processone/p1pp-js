@@ -14,8 +14,8 @@ var P1PP = function(params){
       flash_location: "WebSocketMain.swf",
       domain: "p1pp.net",
       pubsub_domain: "pubsub.p1pp.net",
-      ws_url: "ws://p1pp.net:5280/xmpp",
-      bosh_url: "http://p1pp.net:5280/http-bind",
+      ws_url: "ws://a.p1pp.net/xmpp",
+      bosh_url: "http://a.p1pp.net/http-bind",
       connect_timeout: 15000, //How long should we wait before trying BOSH ?
       connect_delay: 0,     //Connection will not be done before this number of ms
       connect_retry: 10,     //Connection max attempts
@@ -64,8 +64,8 @@ var P1PP = function(params){
  * <h2>Parameters and their default value</h2>                                                                                   
  * jid: ""  if set, will connect with this JID and password instead anonymous                                                                                                        
  * password: ""   see above                                                                                                                                                          
- * ws_url:  "ws://p1pp.net:5280/xmpp",   websocket URL
- * bosh_url: "http://p1pp.net:5280/http-bind", BOSH URL
+ * ws_url:  "ws://a.p1pp.net/xmpp",   websocket URL
+ * bosh_url: "http://a.p1pp.net/http-bind", BOSH URL
  * domain: "p1pp.net", Domain to logon to
  * rebind: true,   should use rebind if possible                                                                                                                                     
  * nodes: [],    list of nodes to subscribe to                                                                                                                                       
@@ -6495,9 +6495,9 @@ P1PP.prototype = {
      var key = this._build_key()
      if(window.sessionStorage){
         sessionStorage[key]=value;
-      } else {
+     } else {
         this.cookie(key, value);
-      }
+     }
   },
   /**
    * deletes connection information in sessionStorage if available or cookie
@@ -6507,9 +6507,9 @@ P1PP.prototype = {
     var key = this._build_key()
      if(window.sessionStorage){
         sessionStorage.removeItem(key)
-      } else {
+     } else {
         this.cookie(key, null);
-      }
+     }
   },
   /**
    * fetchs connection information in sessionStorage if available or cookie
@@ -6518,10 +6518,10 @@ P1PP.prototype = {
   rebind_fetch: function(){
    var key = this._build_key();
    if(window.sessionStorage){
-       return sessionStorage[key];
-     } else {
-       return this.cookie(key);
-     }
+     return sessionStorage[key];
+   } else {
+     return this.cookie(key);
+   }
   },
   /**
    * Build key for protocol.
