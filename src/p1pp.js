@@ -191,29 +191,8 @@ P1PP.prototype = {
         // ejabberd says data is sent, the browser says no, it's not.
         // One of them is lying. Or both.
         // In the meantime, a short timeout will do the trick.
-        setTimeout(function() {
-          nodes = that.params.nodes;
-          for (var i in nodes) {
-            if (typeof nodes[i] == "string") { // IE6 fix
-              // In case of attach, we need to set up the handlers again.
-              if (that.params.num_old > 0) {
-                that.connection.pubsub.items(that.connection.jid,
-                                             that.params.pubsub_domain, nodes[i],
-                                             that.params.num_old, function(message) {
-                                              var items = message.getElementsByTagName("item");
-
-                                              for (var i = 0;  i < items.length; i++) {
-                                                id = items[i].getAttribute("id");
-                                                that.params.publish(id, items[i].firstChild, nodes[i]);
-                                              }
-                                             })
-              }
-            }
-          }
-          that.connection.addHandler(that.on_event.bind(that),
-                            null,'message',  null, null, that.params.pubsub_domain);
-        }, 100);
-
+        var that = this;
+        setTimeout(function(){that.fetchNodes(null, false)}, 100);
       }
     }
     // Connection problem or reattach failed. Will attempt to reconnect after a random wait
@@ -248,16 +227,11 @@ P1PP.prototype = {
       this.params.on_login_required(login_required_cb);
     }
   },
-  /**
-   * Subscribe to PubSub nodes
-   * If num_old is set, fetch older nodes.
-   * Warning: The last_published item is delivered twice, if both send_last_item configured on node and num_old >= 1
-   * @private
-   */
-  subscribe: function(nodes) {
-    if (nodes === undefined) {
+
+  fetchNodes: function(nodes, andSubscribe) {
+    if (nodes === undefined)
       nodes = this.params.nodes;
-    }
+
     for (var i in nodes) {
       if (typeof nodes[i] == "string") { // IE6 fix
         if (this.params.num_old > 0) {
@@ -268,19 +242,30 @@ P1PP.prototype = {
                                         var items = message.getElementsByTagName("item");
 
                                         for (var i = 0;  i < items.length; i++) {
-                                          id = items[i].getAttribute("id");
+                                          var id = items[i].getAttribute("id");
                                           that.params.publish(id, items[i].firstChild, nodes[i]);
                                         }
                                        })
         }
-        this.connection.pubsub.subscribe(this.connection.jid,
-                                         this.params.pubsub_domain,
-                                         nodes[i],[],
-                                         function(){});
+        if (andSubscribe)
+          this.connection.pubsub.subscribe(this.connection.jid,
+                                           this.params.pubsub_domain,
+                                           nodes[i],[],
+                                           function(){});
       }
     }
     this.connection.addHandler(this.on_event.bind(this), null, "message",
                                null, null, this.params.pubsub_domain);
+  },
+
+  /**
+   * Subscribe to PubSub nodes
+   * If num_old is set, fetch older nodes.
+   * Warning: The last_published item is delivered twice, if both send_last_item configured on node and num_old >= 1
+   * @private
+   */
+  subscribe: function(nodes) {
+    this.fetchNodes(nodes, true);
   },
 
   unsubscribe: function(nodes) {
