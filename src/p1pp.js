@@ -15,35 +15,36 @@
 P1PP.prototype = {
   /**
    * @param {Object} params the configuration parameters. See Readme for usage
-   * @param {Boolean} fallback Used internally. if connection fails and timeout code is triggered it will set this to true.
+   * @param {Boolean} fallback Used internally. if connection fails and timeout
+   *   code is triggered it will set this to true.
    */
-  connect: function(fallback){
+  connect: function(fallback) {
     var self = this,
         params = this.params;
-    if(!!this.connection && this.connection.connected){
+    if (!!this.connection && this.connection.connected) {
       return;
     }
 
     this._check_rebind();
-    var _connect = function(){
+    var _connect = function() {
       self.retries ++;
-      if (self.retries > params.connectretry){
+      if (self.retries > params.connectretry) {
         self.console.log(params.connectretry + " connect retry exceeded");
         return;
       }
-      self.timeout_id = setTimeout(function(){
+      self.timeout_id = setTimeout(function() {
         self.connect(true);
       }, params.connect_timeout);
-      if(!fallback && params.ws_url && window.WebSocket){
+      if (!fallback && params.ws_url && window.WebSocket) {
         self.current_protocol = "WEBSOCKET";
-        self.websocket(); 
-      } else { 
+        self.websocket();
+      } else {
         self.current_protocol = "BOSH";
-        self.bosh(); 
+        self.bosh();
       }
     };
     // Setting up connection delay
-    if((this.retries == 0) && !fallback){
+    if ((this.retries == 0) && !fallback) {
       setTimeout(_connect.bind(this), params.connect_delay);
     } else {
       _connect();
@@ -52,42 +53,42 @@ P1PP.prototype = {
   /**
    * Closes connection to server
    */
-  disconnect: function(){
+  disconnect: function() {
     this.closing=true;
     window.clearTimeout(this.timeout_id);
     this.rebind_delete();
-    if(this.connection){
+    if (this.connection) {
       this.connection.deleteTimedHandler(this.bosh_rebind_id);
       this.connection.disconnect();
     }
   },
-  
+
   /**
    * BOSH connection code.
    * Will attempt to re-attach is param is set and attached value stored on the client.
    */
-  bosh: function(){
-    try{
+  bosh: function() {
+    try {
       this.connection = new Strophe.Connection(this.params.bosh_url);
       /* Reattach needs to be fixed on BOSH */
       var cookie = this.rebind_fetch();
-      if(!!cookie && this.params.rebind){ //there's a cookie
-        prev_connection = cookie.split(" ");  
-        if(prev_connection[0] == "BOSH"){ //Only BOSH cookies accepted
-          this.connection.attach(prev_connection[1],
-                      prev_connection[2],
-                      prev_connection[3],
-                      this.conn_callback.bind(this))
-        } else {
-          this._transport_connect();
-        }
-      } else {
-          this._transport_connect();
-      }
-     } catch (e){
-        this.connect();
-    }
+      if (!!cookie && this.params.rebind) { //there's a cookie
+        prev_connection = cookie.split(" ");
 
+        //Only BOSH cookies accepted
+        if (prev_connection[0] == "BOSH") {
+          this.connection.attach(prev_connection[1],
+                                 prev_connection[2],
+                                 prev_connection[3],
+                                 this.conn_callback.bind(this))
+        } else
+          this._transport_connect();
+      } else {
+        this._transport_connect();
+      }
+    } catch (e) {
+      this.connect();
+    }
   },
 
   /**
@@ -95,45 +96,44 @@ P1PP.prototype = {
    * Will attempt to use fast rebind is param is set and rebind data is availble on client.
    * @private
    */
-  websocket: function(){
-    try{
+  websocket: function() {
+    try {
       this.connection = new Strophe.WebSocket(this.params.ws_url);
       var cookie = this.rebind_fetch();
-      if(!!cookie && this.params.rebind){ 
+      if (!!cookie && this.params.rebind) {
         prev_connection = cookie.split(" ");
         this.connection.rebind(prev_connection[1],
-                    prev_connection[2],
-                    this.conn_callback.bind(this))
-      } else {
+                               prev_connection[2],
+                               this.conn_callback.bind(this))
+      } else
         this._transport_connect();
-      }
-    } catch (e){
-       this.rebind_delete();
-       this.connect();
+    } catch (e) {
+      this.rebind_delete();
+      this.connect();
     }
   },
 
-  _transport_connect: function(){
+  _transport_connect: function() {
     var jid = this.params.jid ? this.params.jid : this.params.domain;
     var password = this.params.password ? this.params.password : ""
-    this.connection.connect(jid, 
-                password, this.conn_callback.bind(this));
+    this.connection.connect(jid, password, this.conn_callback.bind(this));
   },
+
   /**
   * Checks if rebind can be safely called
   * Only useful in case of non-anon connections
   */
-  _check_rebind: function(){
-    if(!this.params.rebind){
+  _check_rebind: function() {
+    if (!this.params.rebind) {
       //rebind not active
       return;
     }
     var cookie = this.rebind_fetch();
-    if(!!cookie && this.params.jid && this.params.jid !== ""){
+    if (!!cookie && this.params.jid && this.params.jid !== "") {
       var prev = cookie.split(" ");
       var jid = Strophe.getBareJidFromJid(this.params.jid);
       var prev_jid = Strophe.getBareJidFromJid(cookie.split(" ")[1]);
-      if(jid != prev_jid){
+      if (jid != prev_jid) {
         this.rebind_delete();
       }
     }
@@ -143,106 +143,107 @@ P1PP.prototype = {
    * @param {Integer} status The StropheJS status of the connection.
    * @private
    */
-  conn_callback: function(status){
+  conn_callback: function(status) {
     var that = this;
-    if(this.params.debug){
-      this.connection.rawOutput = function(elem){
-       that.console.log("out -> " + elem);
+    if (this.params.debug) {
+      this.connection.rawOutput = function(elem) {
+        that.console.log("out -> " + elem);
       }
-      this.connection.rawInput = function(elem){
+      this.connection.rawInput = function(elem) {
         that.console.log("in <- " + elem);
       }
     }
     // Connection established
     window.clearTimeout(this.timeout_id);
-    this.bosh_rebind_id = this.connection.addTimedHandler(2000, function(){
-      if(that.current_protocol === "BOSH" && !that.closing){
+
+    this.bosh_rebind_id = this.connection.addTimedHandler(2000, function() {
+      if (that.current_protocol === "BOSH" && !that.closing) {
         var c = ["BOSH", that.connection.jid, that.connection.sid, that.connection.rid].join(" ");
         that.rebind_store(c);
       }
       return true;
     });
+
     this.params.on_strophe_event(status, this.connection);
-    var login_required_cb = function(jid, pass){
+
+    var login_required_cb = function(jid, pass) {
       that.params.jid=jid;
       that.params.password=pass;
       that.connect();
     }
+
     if (status === Strophe.Status.CONNECTED) {
       this.params.on_connected();
       this.retries = 0;
-      if(this.params.rebind == true 
-        && this.current_protocol == "WEBSOCKET"){
-          this.connection.save(function(){
-            var id = ["WEBSOCKET",that.connection.jid, that.connection.streamId].join(" ")
-            that.rebind_store(id);
-          }, function(){});
-        } 
-      this.subscribe();
-    }
-    // Connection re-attached (or rebound)
-    else if (status === Strophe.Status.ATTACHED){
-      // Forcing subscription. there is a problem with rebinding and anon subs in ejabberd
-      if(this.current_protocol == "WEBSOCKET"){
-        this.subscribe();
+      if (this.params.rebind == true && this.current_protocol == "WEBSOCKET") {
+        this.connection.save(function() {
+          var id = ["WEBSOCKET",that.connection.jid, that.connection.streamId].join(" ")
+          that.rebind_store(id);
+        }, function(){});
       }
-      else{
+      this.subscribe();
+    } else if (status === Strophe.Status.ATTACHED) {
+      // Forcing subscription. there is a problem with rebinding and anon subs in ejabberd
+      if (this.current_protocol == "WEBSOCKET") {
+        this.subscribe();
+      } else {
         // For some reason, I have to wait the second HTTP POST to actually get the result.
         // ejabberd says data is sent, the browser says no, it's not.
         // One of them is lying. Or both.
         // In the meantime, a short timeout will do the trick.
-        setTimeout(function(){
+        setTimeout(function() {
           nodes = that.params.nodes;
-          for(var i in nodes){
-            if(typeof nodes[i] == "string"){ // IE6 fix
+          for (var i in nodes) {
+            if (typeof nodes[i] == "string") { // IE6 fix
               // In case of attach, we need to set up the handlers again.
-              if(that.params.num_old > 0){
-                that.connection.pubsub.items(that.connection.jid, that.params.pubsub_domain, nodes[i], that.params.num_old, function(message){
-                    var items = message.getElementsByTagName("item");
+              if (that.params.num_old > 0) {
+                that.connection.pubsub.items(that.connection.jid,
+                                             that.params.pubsub_domain, nodes[i],
+                                             that.params.num_old, function(message) {
+                                              var items = message.getElementsByTagName("item");
 
-            	    for(var i = 0;  i < items.length; i++){
-            	      id = items[i].getAttribute("id");
-                      that.params.publish(id, items[i].firstChild, nodes[i]);
-            	    }
-                 })
+                                              for (var i = 0;  i < items.length; i++) {
+                                                id = items[i].getAttribute("id");
+                                                that.params.publish(id, items[i].firstChild, nodes[i]);
+                                              }
+                                             })
               }
             }
           }
           that.connection.addHandler(that.on_event.bind(that),
                             null,'message',  null, null, that.params.pubsub_domain);
         }, 100);
-        
+
       }
-       
     }
     // Connection problem or reattach failed. Will attempt to reconnect after a random wait
-    else if (!this.closing 
-            && (status === Strophe.Status.CONNFAIL 
+    else if (!this.closing
+            && (status === Strophe.Status.CONNFAIL
               || status === Strophe.Status.DISCONNECTED)) {
       this.connection.deleteTimedHandler(this.bosh_rebind_id);
       this.rebind_delete();
       //login is required. Give user code a chance to fetch jid and password
-      if(!this.params.jid && this.params.login_required){
+      if (!this.params.jid && this.params.login_required) {
         this.params.on_login_required(login_required_cb)
       } else {
          var retry_time = Math.round(Math.random() * this.params.connect_timeout * (this.retries+1));
-          this.timeout_id = setTimeout(function(){
+          this.timeout_id = setTimeout(function() {
             that.connect();
           }, retry_time);
       }
     }
-    else if (status === Strophe.Status.DISCONNECTED){
+    else if (status === Strophe.Status.DISCONNECTED) {
       this.connection.reset();
       this.closing = false;
       this.params.on_disconnect();
     }
     // WebSocket rebind failed. Removing user data and reconnecting
-    else if (status === Strophe.Status.REBINDFAILED){
+    else if (status === Strophe.Status.REBINDFAILED) {
       this.rebind_delete();
       this.connection = null;
       this.connect();
     }
-    else if (status === Strophe.Status.AUTHFAIL){
+    else if (status === Strophe.Status.AUTHFAIL) {
       delete this.connection;
       this.params.on_login_required(login_required_cb);
     }
@@ -253,50 +254,51 @@ P1PP.prototype = {
    * Warning: The last_published item is delivered twice, if both send_last_item configured on node and num_old >= 1
    * @private
    */
-  subscribe: function(nodes){
-    if(nodes === undefined){
+  subscribe: function(nodes) {
+    if (nodes === undefined) {
       nodes = this.params.nodes;
     }
-    for(var i in nodes){
-      if(typeof nodes[i] == "string"){ // IE6 fix
-        if(this.params.num_old > 0){
+    for (var i in nodes) {
+      if (typeof nodes[i] == "string") { // IE6 fix
+        if (this.params.num_old > 0) {
           var that = this;
-          this.connection.pubsub.items(this.connection.jid, this.params.pubsub_domain, nodes[i], this.params.num_old, function(message){
-            var items = message.getElementsByTagName("item");
+          this.connection.pubsub.items(this.connection.jid, this.params.pubsub_domain,
+                                       nodes[i], this.params.num_old,
+                                       function(message) {
+                                        var items = message.getElementsByTagName("item");
 
-      	    for(var i = 0;  i < items.length; i++){
-      	      id = items[i].getAttribute("id");
-              that.params.publish(id, items[i].firstChild, nodes[i]);
-      	    }
-          })
+                                        for (var i = 0;  i < items.length; i++) {
+                                          id = items[i].getAttribute("id");
+                                          that.params.publish(id, items[i].firstChild, nodes[i]);
+                                        }
+                                       })
         }
-        this.connection.pubsub.subscribe(this.connection.jid, 
-                                this.params.pubsub_domain, 
-                                nodes[i],[],
-                                function(){});
+        this.connection.pubsub.subscribe(this.connection.jid,
+                                         this.params.pubsub_domain,
+                                         nodes[i],[],
+                                         function(){});
       }
     }
-    this.connection.addHandler(this.on_event.bind(this),
-                    null,'message',  null, null, this.params.pubsub_domain);
+    this.connection.addHandler(this.on_event.bind(this), null, "message",
+                               null, null, this.params.pubsub_domain);
   },
 
-  unsubscribe: function(nodes){
-    if(nodes === undefined){
+  unsubscribe: function(nodes) {
+    if (nodes === undefined) {
       nodes = this.params.nodes;
     }
-    for(var i in nodes){
-      if(typeof nodes[i] == "string"){ // IE6 fix
-        this.connection.pubsub.unsubscribe(this.connection.jid, 
-                                this.params.pubsub_domain, 
-                                nodes[i],
-                                function(){});
+    for (var i in nodes) {
+      if (typeof nodes[i] == "string") { // IE6 fix
+        this.connection.pubsub.unsubscribe(this.connection.jid,
+                                           this.params.pubsub_domain,
+                                           nodes[i], function(){});
       }
     }
   },
 
   _extract_error_code: function(stanza) {
     var error = stanza.getElementsByTagNameNS("http://jabber.org/protocol/pubsub#errors", "*");
-    
+
     if (!error.length)
       error = stanza.getElementsByTagNameNS("urn:ietf:params:xml:ns:xmpp-stanzas", "*");
 
@@ -308,7 +310,7 @@ P1PP.prototype = {
 
     if (id == null)
       id = this.connection.getUniqueId("publish");
-    
+
     this.connection.pubsub.publish(this.connection.jid, this.params.pubsub_domain,
                                    node, [{id: id, value: [value]}],
                                    callback ? function(stanza) {
@@ -349,27 +351,28 @@ P1PP.prototype = {
   * @param {DOMElement} msg the message from the server
   * @private
   **/
-  on_event: function(msg){
+  on_event: function(msg) {
     var retracts = msg.getElementsByTagName("retract");
     var length =retracts.length
-    for(var i = 0; i < length; i++){
-      this.params.retract(retracts[i].getAttribute("id"), retracts[i].parentNode.getAttribute("node"));
+    for (var i = 0; i < length; i++) {
+      this.params.retract(retracts[i].getAttribute("id"),
+                          retracts[i].parentNode.getAttribute("node"));
     }
     var delay_time = undefined;
     var delay = msg.getElementsByTagName("delay");
-    if(delay.length){
+    if (delay.length) {
       delay_time = delay[0].getAttribute("stamp");
     }
     var items = msg.getElementsByTagName("items");
     length = items.length;
     var node_name, node_items, ilength;
-    for(var i = 0;  i < length; i++){
+    for (var i = 0;  i < length; i++) {
       node_name = items[i].getAttribute("node");
       node_items = items[i].getElementsByTagName("item");
       ilength = node_items.length;
-      for(var i = 0;  i < ilength; i++){
-        this.params.publish(node_items[i].getAttribute("id"), 
-              node_items[i].firstChild, 
+      for (var i = 0;  i < ilength; i++) {
+        this.params.publish(node_items[i].getAttribute("id"),
+              node_items[i].firstChild,
               node_name,
               delay_time);
       }
@@ -381,8 +384,8 @@ P1PP.prototype = {
    * Cookie management code, taken from jquery.cookie.js <https://github.com/carhartl/jquery-cookie>
    * @private
    */
-  cookie: function(key, value){
-    if (typeof value != 'undefined'){
+  cookie: function(key, value) {
+    if (typeof value != 'undefined') {
        options = this.params.cookie_opts;
         if (value === null) {
             value = '';
@@ -406,7 +409,7 @@ P1PP.prototype = {
         var domain = options.domain ? '; domain=' + (options.domain) : '';
         var secure = options.secure ? '; secure' : '';
         document.cookie = [key, '=', encodeURIComponent(value), expires, path, domain, secure].join('');
-        
+
      } else { // only name given, get cookie
          var cookieValue = null;
          if (document.cookie && document.cookie != '') {
@@ -428,15 +431,15 @@ P1PP.prototype = {
          }
          return cookieValue;
      }
-      
-  },  
+
+  },
   /**
    * stores connection information in sessionStorage if available or cookie
    * @private
    */
-  rebind_store: function(value){
+  rebind_store: function(value) {
      var key = this._build_key()
-     if(window.sessionStorage){
+     if (window.sessionStorage) {
         sessionStorage[key]=value;
      } else {
         this.cookie(key, value);
@@ -446,9 +449,9 @@ P1PP.prototype = {
    * deletes connection information in sessionStorage if available or cookie
    * @private
    */
-  rebind_delete: function(){
+  rebind_delete: function() {
     var key = this._build_key()
-     if(window.sessionStorage){
+     if (window.sessionStorage) {
         sessionStorage.removeItem(key)
      } else {
         this.cookie(key, null);
@@ -458,9 +461,9 @@ P1PP.prototype = {
    * fetchs connection information in sessionStorage if available or cookie
    * @private
    */
-  rebind_fetch: function(){
+  rebind_fetch: function() {
    var key = this._build_key();
-   if(window.sessionStorage){
+   if (window.sessionStorage) {
      return sessionStorage[key];
    } else {
      return this.cookie(key);
@@ -471,12 +474,11 @@ P1PP.prototype = {
    * BOSH connections can be scoped, for a different set of nodes
    * Not necessary for WS as the client subscribes on reattach.
    */
-  _build_key: function(){
+  _build_key: function() {
     var key = P1PP.COOKIE+ "_" + this.current_protocol;
-    if(this.current_protocol === "BOSH"){
+    if (this.current_protocol === "BOSH") {
       key = key + "_" + this.scope;
     }
     return key;
   }
 };
-
