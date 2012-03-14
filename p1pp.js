@@ -15,6 +15,7 @@ var P1PP = function(params){
     domain: "p1pp.net",
     pubsub_domain: "pubsub.p1pp.net",
     ws_url: "ws://a.p1pp.net/xmpp",
+    flash_ws_url: "ws://p1pp.net:5280/xmpp",
     bosh_url: "http://a.p1pp.net/http-bind",
     connect_timeout: 15000, //How long should we wait before trying BOSH ?
     connect_delay: 0,       //Connection will not be done before this number of ms
@@ -2704,10 +2705,10 @@ Strophe.Connection.prototype = {
 
     /** Function: flush
      *  Immediately send any pending outgoing data.
-     *  
+     *
      *  Normally send() queues outgoing data until the next idle period
      *  (100ms), which optimizes network use in the common cases when
-     *  several send()s are called in succession. flush() can be used to 
+     *  several send()s are called in succession. flush() can be used to
      *  immediately send all pending data.
      */
     flush: function ()
@@ -2724,9 +2725,9 @@ Strophe.Connection.prototype = {
      *  Parameters:
      *    (XMLElement) elem - The stanza to send.
      *    (Function) callback - The callback function for a successful request.
-     *    (Function) errback - The callback function for a failed or timed 
+     *    (Function) errback - The callback function for a failed or timed
      *      out request.  On timeout, the stanza will be null.
-     *    (Integer) timeout - The time specified in milliseconds for a 
+     *    (Integer) timeout - The time specified in milliseconds for a
      *      timeout to occur.
      *
      *  Returns:
@@ -2800,7 +2801,7 @@ Strophe.Connection.prototype = {
                 message: "Cannot queue non-DOMElement."
             };
         }
-        
+
         this._data.push(element);
     },
 
@@ -2883,7 +2884,7 @@ Strophe.Connection.prototype = {
      *  boolean). When matchBare is true, the from parameter and the from
      *  attribute on the stanza will be matched as bare JIDs instead of
      *  full JIDs. To use this, pass {matchBare: true} as the value of
-     *  options. The default value for matchBare is false. 
+     *  options. The default value for matchBare is false.
      *
      *  The return value should be saved if you wish to remove the handler
      *  with deleteHandler().
@@ -3496,7 +3497,7 @@ Strophe.Connection.prototype = {
         if (hold) { this.hold = parseInt(hold, 10); }
         var wait = bodyWrap.getAttribute('wait');
         if (wait) { this.wait = parseInt(wait, 10); }
-        
+
 
         var do_sasl_plain = false;
         var do_sasl_digest_md5 = false;
@@ -3696,7 +3697,7 @@ Strophe.Connection.prototype = {
      */
     _quote: function (str)
     {
-        return '"' + str.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'; 
+        return '"' + str.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
         //" end string workaround for emacs
     },
 
@@ -4134,7 +4135,8 @@ Strophe.Connection.prototype = {
         clearTimeout(this._idleTimeout);
         this._idleTimeout = setTimeout(this._onIdle.bind(this), 100);
     }
-};/*
+};
+/*
   Copyright 2008, Stanziq  Inc.
 */
 
@@ -4421,6 +4423,55 @@ Strophe.addConnectionPlugin('pubsub', {
 		{ xmlns:Strophe.NS.PUBSUB }).c('items',{node:node}).c('item', {id: itemid});
 	    
 	    return this._connection.sendIQ(pub.tree(),ok_callback,error_back);
+	}
+});
+Strophe.addConnectionPlugin("xdomainrequest", {
+	init: function () {
+		if (window.XDomainRequest) {
+			Strophe.debug("using XdomainRequest for IE");
+			
+			// override thee send method to fire readystate 2
+			XDomainRequest.prototype.oldsend = XDomainRequest.prototype.send;
+			XDomainRequest.prototype.send = function() {
+				XDomainRequest.prototype.oldsend.apply(this, arguments);
+				this.readyState = 2;
+				try {
+					this.onreadystatechange();
+				} catch (e) {}
+			};
+			
+			// replace Strophe.Request._newXHR with the xdomainrequest version
+			Strophe.Request.prototype._newXHR = function () {
+				var fireReadyStateChange = function (xhr, status) {
+					xhr.status = status;
+					xhr.readyState = 4;
+					try {
+						xhr.onreadystatechange();
+					} catch (e) {}
+				};
+				var xhr = new XDomainRequest();
+				
+				xhr.readyState = 0;
+				xhr.onreadystatechange = this.func.prependArg(this);
+				xhr.onload = function () {
+					xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+					xmlDoc.async = "false";
+					xmlDoc.loadXML(xhr.responseText);
+					xhr.responseXML = xmlDoc;
+					fireReadyStateChange(xhr, 200);
+				};
+				xhr.onerror = function () {
+					fireReadyStateChange(xhr, 500);
+				};
+				xhr.ontimeout = function () {
+					fireReadyStateChange(xhr, 500);
+				};
+				return xhr;
+			}
+			
+		} else {
+			Strophe.error("XDomainRequest not found. Falling back to native XHR implementation.");
+		}
 	}
 });
 // Contact object
@@ -6155,7 +6206,9 @@ P1PP.prototype = {
    */
   websocket: function() {
     try {
-      this.connection = new Strophe.WebSocket(this.params.ws_url);
+      var ws_url = ("__flash" in WebSocket && this.params.flash_ws_url) || this.params.ws_url;
+
+      this.connection = new Strophe.WebSocket(ws_url);
       var cookie = this.rebind_fetch();
       if (!!cookie && this.params.rebind) {
         prev_connection = cookie.split(" ");
@@ -6249,13 +6302,14 @@ P1PP.prototype = {
         // One of them is lying. Or both.
         // In the meantime, a short timeout will do the trick.
         var that = this;
-        setTimeout(function(){that.fetchNodes(null, false)}, 100);
+        setTimeout(function(){that.fetchNodes(null, true)}, 100);
       }
     }
     // Connection problem or reattach failed. Will attempt to reconnect after a random wait
-    else if (!this.closing
-            && (status === Strophe.Status.CONNFAIL
-              || status === Strophe.Status.DISCONNECTED)) {
+    else if (!this.closing &&
+             (status === Strophe.Status.CONNFAIL
+              || status === Strophe.Status.DISCONNECTED))
+    {
       this.connection.deleteTimedHandler(this.bosh_rebind_id);
       this.rebind_delete();
       //login is required. Give user code a chance to fetch jid and password
@@ -6267,19 +6321,16 @@ P1PP.prototype = {
             that.connect();
           }, retry_time);
       }
-    }
-    else if (status === Strophe.Status.DISCONNECTED) {
+    } else if (status === Strophe.Status.DISCONNECTED) {
       this.connection.reset();
       this.closing = false;
       this.params.on_disconnect();
-    }
-    // WebSocket rebind failed. Removing user data and reconnecting
-    else if (status === Strophe.Status.REBINDFAILED) {
+    } else if (status === Strophe.Status.REBINDFAILED) {
+      // WebSocket rebind failed. Removing user data and reconnecting
       this.rebind_delete();
       this.connection = null;
       this.connect();
-    }
-    else if (status === Strophe.Status.AUTHFAIL) {
+    } else if (status === Strophe.Status.AUTHFAIL) {
       delete this.connection;
       this.params.on_login_required(login_required_cb);
     }
