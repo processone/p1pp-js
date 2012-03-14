@@ -98,7 +98,9 @@ P1PP.prototype = {
    */
   websocket: function() {
     try {
-      this.connection = new Strophe.WebSocket(this.params.ws_url);
+      var ws_url = ("__flash" in WebSocket && this.params.flash_ws_url) || this.params.ws_url;
+
+      this.connection = new Strophe.WebSocket(ws_url);
       var cookie = this.rebind_fetch();
       if (!!cookie && this.params.rebind) {
         prev_connection = cookie.split(" ");
