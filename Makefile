@@ -9,6 +9,7 @@ JS_FILES=\
 	src/strophe/strophe.js \
 	src/strophe/strophe.bosh.js \
 	src/strophe/strophe.pubsub.js \
+	src/strophe/strophe.xdr.js \
 	src/strophe/strophe.roster.js \
 	src/strophe/strophe.websocket.js \
 	src/p1pp.js
