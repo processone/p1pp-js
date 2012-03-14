@@ -194,13 +194,14 @@ P1PP.prototype = {
         // One of them is lying. Or both.
         // In the meantime, a short timeout will do the trick.
         var that = this;
-        setTimeout(function(){that.fetchNodes(null, false)}, 100);
+        setTimeout(function(){that.fetchNodes(null, true)}, 100);
       }
     }
     // Connection problem or reattach failed. Will attempt to reconnect after a random wait
-    else if (!this.closing
-            && (status === Strophe.Status.CONNFAIL
-              || status === Strophe.Status.DISCONNECTED)) {
+    else if (!this.closing &&
+             (status === Strophe.Status.CONNFAIL
+              || status === Strophe.Status.DISCONNECTED))
+    {
       this.connection.deleteTimedHandler(this.bosh_rebind_id);
       this.rebind_delete();
       //login is required. Give user code a chance to fetch jid and password
@@ -212,19 +213,16 @@ P1PP.prototype = {
             that.connect();
           }, retry_time);
       }
-    }
-    else if (status === Strophe.Status.DISCONNECTED) {
+    } else if (status === Strophe.Status.DISCONNECTED) {
       this.connection.reset();
       this.closing = false;
       this.params.on_disconnect();
-    }
-    // WebSocket rebind failed. Removing user data and reconnecting
-    else if (status === Strophe.Status.REBINDFAILED) {
+    } else if (status === Strophe.Status.REBINDFAILED) {
+      // WebSocket rebind failed. Removing user data and reconnecting
       this.rebind_delete();
       this.connection = null;
       this.connect();
-    }
-    else if (status === Strophe.Status.AUTHFAIL) {
+    } else if (status === Strophe.Status.AUTHFAIL) {
       delete this.connection;
       this.params.on_login_required(login_required_cb);
     }

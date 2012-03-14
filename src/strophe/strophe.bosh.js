@@ -391,10 +391,10 @@ Strophe.Connection.prototype = {
 
     /** Function: flush
      *  Immediately send any pending outgoing data.
-     *  
+     *
      *  Normally send() queues outgoing data until the next idle period
      *  (100ms), which optimizes network use in the common cases when
-     *  several send()s are called in succession. flush() can be used to 
+     *  several send()s are called in succession. flush() can be used to
      *  immediately send all pending data.
      */
     flush: function ()
@@ -411,9 +411,9 @@ Strophe.Connection.prototype = {
      *  Parameters:
      *    (XMLElement) elem - The stanza to send.
      *    (Function) callback - The callback function for a successful request.
-     *    (Function) errback - The callback function for a failed or timed 
+     *    (Function) errback - The callback function for a failed or timed
      *      out request.  On timeout, the stanza will be null.
-     *    (Integer) timeout - The time specified in milliseconds for a 
+     *    (Integer) timeout - The time specified in milliseconds for a
      *      timeout to occur.
      *
      *  Returns:
@@ -487,7 +487,7 @@ Strophe.Connection.prototype = {
                 message: "Cannot queue non-DOMElement."
             };
         }
-        
+
         this._data.push(element);
     },
 
@@ -570,7 +570,7 @@ Strophe.Connection.prototype = {
      *  boolean). When matchBare is true, the from parameter and the from
      *  attribute on the stanza will be matched as bare JIDs instead of
      *  full JIDs. To use this, pass {matchBare: true} as the value of
-     *  options. The default value for matchBare is false. 
+     *  options. The default value for matchBare is false.
      *
      *  The return value should be saved if you wish to remove the handler
      *  with deleteHandler().
@@ -1183,7 +1183,7 @@ Strophe.Connection.prototype = {
         if (hold) { this.hold = parseInt(hold, 10); }
         var wait = bodyWrap.getAttribute('wait');
         if (wait) { this.wait = parseInt(wait, 10); }
-        
+
 
         var do_sasl_plain = false;
         var do_sasl_digest_md5 = false;
@@ -1383,7 +1383,7 @@ Strophe.Connection.prototype = {
      */
     _quote: function (str)
     {
-        return '"' + str.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'; 
+        return '"' + str.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
         //" end string workaround for emacs
     },
 
